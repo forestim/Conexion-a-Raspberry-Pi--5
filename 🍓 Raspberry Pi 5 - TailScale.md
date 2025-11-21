@@ -7,27 +7,28 @@ En esta guía configuraremos un túnel seguro mediante **TailScale**, permitiend
 ## 🚀 Instalación de TailScale (VPN)
 
 ### 1️⃣ Actualizar paquetes e instalar TailScale
-
-`sudo apt update && curl -fsSL https://tailscale.com/install.sh | sh`
-
+```bash
+sudo apt update && curl -fsSL https://tailscale.com/install.sh | sh
+```
 ---
 
 ## 🔧 Configuración de red para TailScale
 
 Estas configuraciones permiten el reenvío de paquetes IPv4 e IPv6, necesario para utilizar la Raspberry Pi como *Exit Node*.
-
-`echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf`
-
-`echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf`
-
+```bash
+echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+```
+```bash
+echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+```
 Aplicar los cambios:
-
-`sudo sysctl -p /etc/sysctl.d/99-tailscale.conf`
-
+```bash
+sudo sysctl -p /etc/sysctl.d/99-tailscale.conf
+```
 Iniciar TailScale con acceso SSH y anuncio del *Exit Node*:
-
-`sudo tailscale up --ssh --advertise-exit-node`
-
+```bash
+sudo tailscale up --ssh --advertise-exit-node
+```
 ---
 
 ## 🛡️ Configuración necesaria en el panel de TailScale
