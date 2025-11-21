@@ -8,7 +8,7 @@ En esta guía configuraremos un túnel seguro mediante **TailScale**, permitiend
 
 ### 1️⃣ Actualizar paquetes e instalar TailScale
 
-sudo apt update && curl -fsSL https://tailscale.com/install.sh | sh
+`sudo apt update && curl -fsSL https://tailscale.com/install.sh | sh`
 
 ---
 
@@ -21,11 +21,11 @@ echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale
 
 Aplicar los cambios:
 
-sudo sysctl -p /etc/sysctl.d/99-tailscale.conf
+`sudo sysctl -p /etc/sysctl.d/99-tailscale.conf`
 
 Iniciar TailScale con acceso SSH y anuncio del *Exit Node*:
 
-sudo tailscale up --ssh --advertise-exit-node
+`sudo tailscale up --ssh --advertise-exit-node`
 
 ---
 
