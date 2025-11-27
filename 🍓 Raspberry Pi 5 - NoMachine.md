@@ -1,96 +1,82 @@
-# 🍓 Raspberry Pi 5 (4GB) — Configuración de NoMachine
-Guía para configurar un entorno remoto con interfaz gráfica usando **NoMachine** y el túnel creado con **TailScale**.
+# 🍓 Raspberry Pi 5 — Configuración de NoMachine
+
+![Raspberry Pi](https://img.shields.io/badge/Hardware-Raspberry%20Pi%205-C51A4A?logo=raspberrypi&logoColor=white)
+![NoMachine](https://img.shields.io/badge/Remote-NoMachine-orange)
+![X11](https://img.shields.io/badge/Display-X11-lightgrey)
+
+> **Resumen:** Guía para configurar un entorno de escritorio remoto de alto rendimiento con interfaz gráfica usando **NoMachine** sobre el túnel **Tailscale**.
 
 ---
 
-## 🖥️ Configuración del motor gráfico
-Para reducir conflictos y uso de recursos, ajustaremos la Raspberry Pi 5.  
-Esto también puede hacerse por **SSH** desde PowerShell:
+## 📋 Introducción
 
-```bash
-ssh <Usuario>@<IP>
+Para garantizar la compatibilidad y el rendimiento en la Raspberry Pi 5 (Bookworm), es necesario migrar del compositor **Wayland** al sistema **X11**, ya que NoMachine funciona de manera nativa y más estable sobre este último.
+
+```mermaid
+graph LR
+    A[Cliente Remoto] -->|Tailscale VPN| B(Raspberry Pi 5)
+    B -->|X11 Display| C[Entorno de Escritorio]
+    style B fill:#C51A4A,stroke:#333,stroke-width:2px,color:white
 ```
 
 ---
 
-## 1️⃣ Cambios en la configuración
-Abrir menú de configuración:
+## ⚙️ 1. Configuración del Sistema (X11)
+
+Podemos realizar estos ajustes conectándonos vía SSH (Powershell/Terminal):
+`ssh <Usuario>@<IP_Tailscale>`
+
+Ejecutamos la herramienta de configuración:
 
 ```bash
 sudo raspi-config
 ```
 
-Ruta a seleccionar:
+Navega a través de los menús y realiza los siguientes cambios:
 
-```
-6 Advanced Options → A7 Wayland → W1 X11
-```
+| Categoría | Ruta de Menú | Acción/Selección |
+| :--- | :--- | :--- |
+| **Sistema de Ventanas** | `6 Advanced Options` → `A6 Wayland` | Seleccionar **W1 X11** |
+| **Compositor** | `2 Display Options` → `D4 Composite` | Seleccionar **No/Disable** |
+| **Suspensión** | `2 Display Options` → `D2 Screen Blanking` | Seleccionar **No/Disable** |
 
-Reiniciar:
+> **Nota:** Al finalizar, el sistema pedirá reiniciar. Acepta o ejecuta `sudo reboot` manualmente.
 
-```bash
-sudo reboot
-```
-
-Verificación:
+### Verificación
+Una vez reiniciado, confirma que estás usando X11:
 
 ```bash
 echo $XDG_SESSION_TYPE
-```
-
-Debe mostrar:
-
-```
-x11
+# Salida esperada: x11
 ```
 
 ---
 
-## 🔧 Desactivar compositor y screen blanking
+## 📥 2. Instalación de NoMachine
+
+Descargamos e instalamos el paquete `.deb` para arquitectura ARM64.
 
 ```bash
-sudo raspi-config
-```
+# 1. Descargar paquete
+wget [https://web9001.nomachine.com/download/9.2/Raspberry/nomachine_9.2.18_3_arm64.deb](https://web9001.nomachine.com/download/9.2/Raspberry/nomachine_9.2.18_3_arm64.deb)
 
-Luego:
-
-```
-2 Display Options → D4 Composite → Disable
-2 Display Options → D2 Screen Blanking → Disable
-```
-
----
-
-## 2️⃣ Instalación de NoMachine
-
-Descargar:
-
-```bash
-wget https://web9001.nomachine.com/download/9.2/Raspberry/nomachine_9.2.18_3_arm64.deb
-```
-
-Instalar:
-
-```bash
+# 2. Instalar
 sudo dpkg -i nomachine_9.2.18_3_arm64.deb
 ```
 
-Configurar reglas de rendimiento:
+---
+
+## 🚀 3. Optimización de Rendimiento
+
+Para mejorar la fluidez a través del túnel VPN, aplicaremos reglas específicas al servidor NX (compresión JPEG y modo rendimiento).
 
 ```bash
 sudo /etc/NX/nxserver --ruleadd --class node --type display --value "performance" --option "proxy-extra-options" --value "pack=16m-jpeg-9"
 ```
 
-Iniciar servicio:
+Finalmente, aseguramos el inicio del servicio y reiniciamos para aplicar todo:
 
 ```bash
 sudo /etc/NX/nxserver --startup
-```
-
-Reiniciar:
-
-```bash
 sudo reboot
 ```
-
----
