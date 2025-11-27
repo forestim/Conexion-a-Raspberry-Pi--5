@@ -1,96 +1,87 @@
-# 📡 Raspberry Pi 5 + Tailscale + NoMachine  
-Optimización de conexión remota en redes de baja velocidad
+# 📡 RPi 5 + Tailscale + NoMachine: Optimización Low-Bandwidth
 
-Este proyecto describe una configuración optimizada para entornos donde la velocidad de internet ronda **~5 Mbps de descarga y subida**.  
-El objetivo es mantener una conexión **estable, de baja latencia y con entorno gráfico**, utilizando una Raspberry Pi 5 conectada mediante **Tailscale** y **NoMachine**.
+![Raspberry Pi](https://img.shields.io/badge/Hardware-Raspberry%20Pi%205-C51A4A?logo=raspberrypi&logoColor=white)
+![Network](https://img.shields.io/badge/Network-4G%20%2F%20LTE-blue?logo=alpinelinux&logoColor=white)
+![Speed](https://img.shields.io/badge/Speed-~5%20Mbps-orange)
 
----
-
-## 🗺️ Topología de Conexión
-
-        ┌─────────────┐
-        │ Alimentación│
-        └──────┬──────┘
-               │
-        ┌──────▼──────┐
-        │   Switch    │
-        └───┬────┬────┘
-            │    │
-            │    └───────────────┐
-            │                    │
-    ┌───────▼───────┐     ┌──────▼───────┐
-    │ POE Converter │     │   Raspberry  │
-    │   PS5724AT    │     │     PI 5     │
-    └───────────────┘     └──────────────┘
-            │
-    ┌───────▼────────┐
-    │    Router 4G   │
-    │    Teltonika   │    
-    └────────────────┘
-
-
-## ⚙️ Especificaciones y Configuración Física
-
-### 🛜 Router Teltonika **RUT200**
-Principales limitaciones encontradas:
-
-- Módulo **LTE Cat 4** → Máx. ~150 Mbps (bajada) / ~50 Mbps (subida)  
-- Wi-Fi **802.11 b/g/n** (Wi-Fi 4) solo en 2.4 GHz  
-- Puertos Ethernet **10/100 Mbps**  
-- **128 MB de RAM**, limitando ciertas tareas
+> **Objetivo del Proyecto:** Lograr un escritorio remoto con interfaz gráfica **fluida y estable** en entornos críticos donde la velocidad de internet no supera los **5 Mbps** simétricos, utilizando la eficiencia de Tailscale y el protocolo NX de NoMachine.
 
 ---
 
-### 📶 Antenas Teltonika **PR1US440**
+## 🗺️ Topología de Red y Energía
 
-- Ganancia: **4 dBi**
-- Frecuencias: **698–960 MHz / 1710–2690 MHz**
-- Polarización: **Lineal**
-- Conector: **SMA Male**
+El siguiente esquema ilustra la distribución de energía (PoE) y el flujo de datos. El Switch actúa como el núcleo de la infraestructura.
 
----
+```mermaid
+graph TD
+    Power[⚡ Fuente de Alimentación] -->|DC In| Switch
+    
+    subgraph Infraestructura de Red
+        Switch[🔀 Switch Mercusys MS105GP]
+        
+        %% Conexión a Raspberry
+        Switch -->|PoE + Datos| RPi(🍓 Raspberry Pi 5)
+        
+        %% Conexión a Router via Splitter
+        Switch -->|PoE Activo| Splitter(🔌 POE Splitter)
+        Splitter -->|DC 12V| Router(📶 Router 4G Teltonika)
+        Splitter -->|Ethernet 100Mbps| Router
+    end
 
-### 🔌 POE Converter **PS5724AT-RJ (Splitter)**
-
-Utilizado para permitir la alimentación POE entre Switch → Raspberry y Switch → Router, evitando usar fuentes adicionales.
-
-**Especificaciones:**
-- SN: *07255724AT4228*
-- Velocidad Máxima: **10/100 Mbps**
-
-> **Nota:**  
-> El cable integrado del convertidor no posee documentación técnica. Esto podría generar **cuellos de botella**, ruido o interferencias si el cable es de baja calidad o el diseño interno no es óptimo.
-
----
-
-### 🔀 Switch Mercusys **MS105GP**
-
-- **5 puertos Gigabit**
-- **4 puertos POE+**
-- **Modo Extend:**  
-  - Aumenta la distancia POE  
-  - *Reduce la velocidad a 10 Mbps*  
-  - → Mantener **desactivado**
-- **Modo Isolation:**  
-  - Aísla puertos permitiendo comunicación sólo con el Puerto 5  
-  - → Mantener **desactivado** para esta topología
+    style Switch fill:#1F618D,stroke:#fff,stroke-width:2px,color:white
+    style RPi fill:#C51A4A,stroke:#fff,stroke-width:2px,color:white
+    style Router fill:#239B56,stroke:#fff,stroke-width:2px,color:white
+```
 
 ---
 
-### 🍓 Raspberry Pi 5 **(4GB)**
+## ⚙️ Especificaciones de Hardware
 
-- Ancho de banda estimado: **~1 Gbps**
-- Wi-Fi **802.11ac (Wi-Fi 5)**  
-- Potencia suficiente para acceso remoto con entorno gráfico
+### 1. 📶 Router Teltonika **RUT200**
+El punto de entrada de internet 4G. Se han identificado las siguientes limitaciones físicas que definen el techo de rendimiento:
+
+| Componente | Especificación | Limitación / Impacto |
+| :--- | :--- | :--- |
+| **Módulo LTE** | Cat 4 | Máx teórico: 150 Mbps DL / 50 Mbps UL. |
+| **Wi-Fi** | 802.11 b/g/n (2.4GHz) | Saturación y menor ancho de banda local. |
+| **Ethernet** | 2x Puertos 10/100 | **⚠️ Cuello de botella principal:** Limita la LAN a 100 Mbps. |
+| **RAM** | 128 MB | Limita el uso de servicios pesados internos (Docker, etc). |
+
+#### 📡 Antenas (Teltonika PR1US440)
+* **Ganancia:** 4 dBi
+* **Frecuencias:** 698–960 MHz / 1710–2690 MHz
+* **Conexión:** SMA Male (Polarización Lineal)
 
 ---
 
-## 🛠️ Configuraciones del Sistema
+### 2. 🔌 POE Converter **PS5724AT-RJ** (Splitter)
+Elemento crítico para eliminar fuentes de alimentación redundantes. Convierte el estándar PoE (48V) a 12V para el router.
 
-En este repositorio encontrarás dos archivos con todas las configuraciones necesarias para **exprimir al máximo la conexión** en entornos de bajo ancho de banda:
+* **SN:** `07255724AT4228`
+* **Velocidad:** 10/100 Mbps
 
-- 📄 **Configuración Raspberry Pi 5 (4GB)**
-- 📄 **Configuración de acceso desde Windows 11**
+> **⚠️ Advertencia de Calidad:**
+> El cable integrado de este convertidor carece de documentación técnica oficial.
+> * **Riesgo:** Posible inducción de ruido eléctrico o inestabilidad en la negociación de enlace.
+> * **Impacto:** Si la conexión fluctúa, este cable es el primer punto de falla a revisar.
 
-Estas configuraciones permiten obtener una experiencia más **fluida**, **estable** y con **menor latencia** al utilizar Tailscale + NoMachine.
+---
 
+### 3. 🔀 Switch Mercusys **MS105GP**
+El nodo central que gestiona el tráfico y la energía.
+
+* **Capacidad:** 5 Puertos Gigabit (4 PoE+).
+* **Configuración de Interruptores Físicos:**
+
+| Modo | Estado Recomendado | Razón |
+| :--- | :--- | :--- |
+| **Extend** | ❌ **OFF** (Apagado) | Al activarlo, reduce la velocidad a **10 Mbps**. Solo usar si el cable supera los 100m. |
+| **Isolation** | ❌ **OFF** (Apagado) | Al activarlo, impide que los dispositivos se vean entre sí (RPi no vería al Router). |
+
+---
+
+### 4. 🍓 Raspberry Pi 5 (4GB)
+El cerebro de la operación. Gracias a su interfaz Gigabit, su conexión con el Switch es perfecta, aunque estará limitada a la velocidad de salida del Router 4G hacia internet.
+
+* **Conectividad:** Gigabit Ethernet / Wi-Fi 5 (ac).
+* **Rol:** Servidor de escritorio remoto y Exit Node.
