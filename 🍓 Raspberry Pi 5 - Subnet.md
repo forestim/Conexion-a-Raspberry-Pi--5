@@ -44,7 +44,7 @@ Añade la siguiente línea al final del archivo. Esta línea define la regla de 
 
 ```conf
 # bindaddress  bindport  connectaddress  connectport
-0.0.0.0        8080      192.168.1.108   80
+0.0.0.0        8080      192.168.1.148   80
 ```
 
 ### 🔍 Desglose de parámetros
@@ -53,7 +53,7 @@ Añade la siguiente línea al final del archivo. Esta línea define la regla de 
 | :--- | :--- | :--- |
 | **Bind Address** | `0.0.0.0` | Indica que `rinetd` escuchará en **todas** las interfaces de red disponibles (incluida la interfaz virtual de Tailscale). |
 | **Bind Port** | `8080` | Es el puerto de entrada en la Raspberry Pi. Usarás este puerto en tu navegador remoto. |
-| **Target IP** | `192.168.1.108` | **(Ejemplo)** La dirección IP local del dispositivo objetivo (ej. tu Cámara PTZ o servidor web). |
+| **Target IP** | `192.168.1.148` | **(Ejemplo)** La dirección IP local del dispositivo objetivo (ej. tu Cámara PTZ o servidor web). |
 | **Target Port** | `80` | El puerto donde el dispositivo objetivo sirve su contenido (página web de la cámara). |
 
 ---
