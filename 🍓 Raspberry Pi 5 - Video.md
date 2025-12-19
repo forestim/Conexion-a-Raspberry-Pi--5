@@ -9,10 +9,10 @@ Descargar, descomprimir y mover los ejecutables a las carpetas del sistema.
 
 
 # Descargar la versión 1.9.0 para ARM64
-`wget https://github.com/bluenviron/mediamtx/releases/download/v1.9.0/mediamtx_v1.9.0_linux_arm64v8.tar.gz`
+`wget https://github.com/bluenviron/mediamtx/releases/download/v1.15.5/mediamtx_v1.15.5_linux_arm64.tar.gz`
 
 # Descomprimir el archivo
-`tar -xvzf mediamtx_v1.9.0_linux_arm64v8.tar.gz`
+`tar -xvzf mediamtx_v1.15.5_linux_arm64v8.tar.gz`
 
 # Mover el ejecutable a /usr/local/bin
 `sudo mv mediamtx /usr/local/bin/`
@@ -20,27 +20,72 @@ Descargar, descomprimir y mover los ejecutables a las carpetas del sistema.
 # Mover el archivo de configuración a /etc
 `sudo mv mediamtx.yml /etc/`
 
+`sudo chmod +x /usr/local/bin/mediamtx`
+
+
 ## 2. Configuración de Cámaras
 
 Editar el archivo de configuración:
 
-```bash
-sudo nano /etc/mediamtx.yml
-```
+
+`sudo nano /etc/mediamtx.yml`
+
+`sudo rm /etc/mediamtx.yml && sudo nano /etc/mediamtx.yml`
+
+Certificados
+
+`tailscale cert focoenobra3.tailb2be55.ts.net`
+`tailscale serve https:8889 / http://127.0.0.1:8889`
+
+`tailscale funnel 8889 on`
+
 
 Agregar el siguiente contenido al final del archivo, en la sección `paths`:
 
 ```yaml
+###############################################
+# CONFIGURACIÓN - TAILSCALE FUNNEL
+###############################################
+logLevel: info
+logDestinations: [stdout]
+
+# --- WEBRTC ---
+webrtc: yes
+# Puerto de señalización (La página web)
+webrtcAddress: :8889
+webrtcEncryption: no
+
+# CORS (Permisos web)
+webrtcAllowOrigins:
+  - "*"
+
+# CRÍTICO: La dirección pública
+# Esto le dice al navegador: "Búscame en esta URL, no en la IP local"
+webrtcAdditionalHosts:
+  - focoenobra3.tailb2be55.ts.net
+
+# CRÍTICO: El canal de video TCP
+# Corregimos el nombre del comando: es 'LocalTCPAddress'
+webrtcLocalTCPAddress: :8443
+
+# (Nota: No ponemos nada de UDP. Al no configurar UDP y sí TCP,
+# el navegador intentará UDP, fallará, y saltará a este puerto TCP 8443)
+
+# --- RTSP (Interno) ---
+rtsp: yes
+rtspAddress: :8554
+
+# --- HLS (Backup) ---
+hls: yes
+hlsAddress: :8888
+
+###############################################
+# CÁMARAS
+###############################################
 paths:
-  # --- CÁMARA 1 (OBRA) ---
-
-  # Ruta para Alta Calidad (Se usará al hacer clic para ver detalle)
-  cam1_hq:
-    source: rtsp://admin:<Contraseña>@<IP CAMARA:554>/cam/realmonitor?channel=1&subtype=0
-
-  # Ruta para Baja Calidad (Se usará para el Dashboard fluido)
   cam1_lq:
-    source: rtsp://admin:<Contraseña>@<IP CAMARA:554>/cam/realmonitor?channel=1&subtype=1
+    source: rtsp://admin:feo2024!@192.168.1.108:554/cam/realmonitor?channel=1&subtype=1
+    sourceOnDemand: yes
 ```
 
 *Para guardar: `Ctrl + O`, `Enter`. Para salir: `Ctrl + X`.*
@@ -95,10 +140,3 @@ sudo systemctl restart mediamtx
 ```
 
 ## 5. Solución de Problemas (Firewall)
-
-En caso de que el servicio no arranque o no sea accesible, puede deberse a un bloqueo de puertos. Ejecuta lo siguiente para permitirlos:
-
-```bash
-sudo ufw allow 8889/tcp
-sudo ufw allow 8889/udp
-```
